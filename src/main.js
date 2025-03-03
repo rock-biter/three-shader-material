@@ -27,21 +27,40 @@ const scene = new THREE.Scene()
  * BOX
  */
 // const material = new THREE.MeshNormalMaterial()
-const material = new THREE.MeshStandardMaterial({ color: 'coral' })
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const mesh = new THREE.Mesh(geometry, material)
-mesh.position.y += 0.5
-scene.add(mesh)
+const material = new THREE.ShaderMaterial({
+	vertexShader: /* glsl */ `
 
-// __floor__
-/**
- * Plane
- */
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 'lightgray' })
-const groundGeometry = new THREE.PlaneGeometry(10, 10)
-groundGeometry.rotateX(-Math.PI * 0.5)
-const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-scene.add(ground)
+	uniform float uTime;
+
+	void main() {
+
+		vec3 pos = position;
+
+		pos.z += sin(pos.x * 20. + uTime * 2.) * 0.05;
+
+		gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+	}
+	`,
+	fragmentShader: /* glsl */ `
+
+	uniform float uTime;
+
+	void main() {
+
+		float r = sin(uTime) * 0.5 + 0.5;
+		float g = sin(uTime + 2.) * 0.5 + 0.5;
+		float b = sin(uTime + 4.) * 0.5 + 0.5;
+		gl_FragColor = vec4(r,g,b,1.0);
+	}
+	`,
+	uniforms: {
+		uTime: { value: 0 },
+	},
+	wireframe: true,
+})
+const geometry = new THREE.PlaneGeometry(1, 1, 50, 50)
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
 
 /**
  * render sizes
@@ -54,15 +73,10 @@ const sizes = {
 /**
  * Camera
  */
-const fov = 60;
-const camera = new THREE.PerspectiveCamera(
-	fov,
-	sizes.width / sizes.height,
-	0.1
-);
-camera.position.set(4, 4, 4);
-camera.lookAt(new THREE.Vector3(0, 2.5, 0));
-
+const fov = 60
+const camera = new THREE.PerspectiveCamera(fov, sizes.width / sizes.height, 0.1)
+camera.position.set(0.3, 0, 1.5)
+camera.lookAt(new THREE.Vector3(0, 2.5, 0))
 
 /**
  * Show the axes of coordinates system
@@ -94,13 +108,13 @@ controls.enableDamping = true
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
 const directionalLight = new THREE.DirectionalLight(0xffffff, 4.5)
 directionalLight.position.set(3, 10, 7)
-scene.add(ambientLight,directionalLight)
+scene.add(ambientLight, directionalLight)
 
 /**
  * Three js Clock
  */
 // __clock__
-// const clock = new THREE.Clock()
+const clock = new THREE.Clock()
 
 /**
  * frame loop
@@ -113,7 +127,9 @@ function tic() {
 	/**
 	 * tempo totale trascorso dall'inizio
 	 */
-	// const time = clock.getElapsedTime()
+	const time = clock.getElapsedTime()
+
+	material.uniforms.uTime.value = time
 
 	// __controls_update__
 	controls.update()
