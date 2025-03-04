@@ -32,11 +32,18 @@ const material = new THREE.ShaderMaterial({
 
 	uniform float uTime;
 
+	varying vec2 vUv;
+	varying float vDepth;
+
 	void main() {
 
 		vec3 pos = position;
+		vUv = uv;
 
-		pos.z += sin(pos.x * 20. + uTime * 2.) * 0.05;
+		pos.z += sin(pos.x * 15. + uTime * 2.) * 0.1;
+		pos.z += cos(pos.y * 10. + uTime * 2.) * 0.1;
+
+		vDepth = pos.z * 5.;
 
 		gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 	}
@@ -45,20 +52,26 @@ const material = new THREE.ShaderMaterial({
 
 	uniform float uTime;
 
+	varying vec2 vUv;
+
+	varying float vDepth;
+
 	void main() {
 
-		float r = sin(uTime) * 0.5 + 0.5;
-		float g = sin(uTime + 2.) * 0.5 + 0.5;
-		float b = sin(uTime + 4.) * 0.5 + 0.5;
-		gl_FragColor = vec4(r,g,b,1.0);
+		float r = sin(uTime + vUv.x) * 0.5 + 0.5;
+		float g = sin(uTime + vUv.y + 2.) * 0.5 + 0.5;
+		float b = sin(uTime + vUv.x + 4.) * 0.5 + 0.5;
+
+		vec3 color = mix(vec3(r,g,b),vec3(0.),1. - vDepth - 0.75);
+		gl_FragColor = vec4(color,1.0);
 	}
 	`,
 	uniforms: {
 		uTime: { value: 0 },
 	},
-	wireframe: true,
+	// wireframe: true,
 })
-const geometry = new THREE.PlaneGeometry(1, 1, 50, 50)
+const geometry = new THREE.PlaneGeometry(1, 1, 100, 100)
 const mesh = new THREE.Mesh(geometry, material)
 scene.add(mesh)
 
@@ -83,7 +96,7 @@ camera.lookAt(new THREE.Vector3(0, 2.5, 0))
  */
 // __helper_axes__
 const axesHelper = new THREE.AxesHelper(3)
-scene.add(axesHelper)
+// scene.add(axesHelper)
 
 /**
  * renderer
